@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OLED Animation Studio — Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ══════════════════════════════════════════════════════════
+       CSS DESIGN TOKENS — CYBERPUNK DARK NEO-BRUTALISM
+    ══════════════════════════════════════════════════════════ */
+    :root {
+      --cyan:        #00ffcc;
+      --cyan-dim:    rgba(0,255,204,0.12);
+      --cyan-glow:   0 0 20px rgba(0,255,204,0.35);
+      --green:       #39ff14;
+      --red:         #ff3c3c;
+      --yellow:      #ffd60a;
+      --bg:          #09090b;
+      --bg2:         #0c0c0f;
+      --card:        rgba(15,15,20,0.82);
+      --border:      rgba(255,255,255,0.07);
+      --border-hi:   rgba(0,255,204,0.28);
+      --text:        #e2e2ee;
+      --muted:       #71717a;
+      --dim:         #3f3f46;
+      --ui:          'Syne', sans-serif;
+      --label:       'Rajdhani', sans-serif;
+      --code:        'IBM Plex Mono', monospace;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       RESET & BASE
+    ══════════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--ui);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(ellipse 60% 50% at 15% 10%, rgba(0,255,204,0.04) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 85% 90%, rgba(57,255,20,0.025) 0%, transparent 70%),
+        linear-gradient(rgba(0,255,204,0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,204,0.018) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 44px 44px, 44px 44px;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       CUSTOM SCROLLBARS
+    ══════════════════════════════════════════════════════════ */
+    ::-webkit-scrollbar          { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track    { background: transparent; }
+    ::-webkit-scrollbar-thumb    { background: var(--cyan); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { box-shadow: var(--cyan-glow); }
+    * { scrollbar-width: thin; scrollbar-color: var(--cyan) transparent; }
+
+    /* ══════════════════════════════════════════════════════════
+       HEADER
+    ══════════════════════════════════════════════════════════ */
+    .app-header {
+      text-align: center;
+      padding: 2.2rem 1rem 1.6rem;
+    }
+    .app-title {
+      font-family: var(--label);
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 700;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      color: #fff;
+      text-shadow: 0 0 50px rgba(0,255,204,0.25);
+      line-height: 1;
+    }
+    .app-title .accent { color: var(--cyan); }
+    .version-pill {
+      display: inline-block;
+      font-family: var(--code);
+      font-size: 0.58rem;
+      background: var(--cyan-dim);
+      color: var(--cyan);
+      border: 1px solid var(--border-hi);
+      border-radius: 3px;
+      padding: 2px 7px;
+      margin-left: 8px;
+      vertical-align: middle;
+      letter-spacing: 1px;
+    }
+    .app-sub {
+      font-family: var(--code);
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 7px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+    .header-rule {
+      width: 220px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--cyan), transparent);
+      margin: 1.2rem auto 0;
+      opacity: 0.45;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       APP GRID — 3-COLUMN LAYOUT
+    ══════════════════════════════════════════════════════════ */
+    .app-grid {
+      display: grid;
+      grid-template-columns: 290px 1fr 345px;
+      grid-template-areas: "left center right";
+      gap: 14px;
+      padding: 0 14px 40px;
+      max-width: 1420px;
+      margin: 0 auto;
+    }
+    @media (max-width: 1150px) {
+      .app-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas: "left center" "right right";
+      }
+    }
+    @media (max-width: 720px) {
+      .app-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas: "left" "center" "right";
+      }
+    }
+    .panel-left   { grid-area: left;   display: flex; flex-direction: column; gap: 12px; }
+    .panel-center { grid-area: center; display: flex; flex-direction: column; gap: 12px; }
+    .panel-right  { grid-area: right;  display: flex; flex-direction: column; gap: 12px; }
+
+    /* ══════════════════════════════════════════════════════════
+       GLASS CARD
+    ══════════════════════════════════════════════════════════ */
+    .card {
+      background: var(--card);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(0,255,204,0.35), transparent);
+      pointer-events: none;
+    }
+    .card:hover { border-color: rgba(0,255,204,0.14); }
+
+    /* ══════════════════════════════════════════════════════════
+       SECTION TITLES
+    ══════════════════════════════════════════════════════════ */
+    .sec-title {
+      font-family: var(--label);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 15px;
+    }
+    .sec-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, var(--border-hi), transparent);
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       FORM CONTROLS
+    ══════════════════════════════════════════════════════════ */
+    .ctrl { margin-bottom: 13px; }
+
+    .ctrl-label {
+      display: block;
+      font-family: var(--label);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .ctrl-label .live-val { color: var(--cyan); font-weight: 700; }
+
+    select, input[type="number"] {
+      width: 100%;
+      padding: 9px 12px;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--label);
+      font-size: 0.85rem;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+    select {
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%2300ffcc' d='M5 6 0 0h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 11px center;
+    }
+    select:focus, input[type="number"]:focus {
+      border-color: var(--border-hi);
+      box-shadow: 0 0 0 2px var(--cyan-dim);
+    }
+    input[type="number"] { font-family: var(--code); }
+
+    /* Range */
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 3px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.08);
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 15px; height: 15px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 8px rgba(0,255,204,0.7);
+      cursor: grab;
+      transition: transform 0.15s;
+    }
+    input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.25); }
+    input[type="range"]::-moz-range-thumb {
+      width: 15px; height: 15px;
+      border-radius: 50%;
+      background: var(--cyan);
+      border: none;
+      cursor: grab;
+    }
+
+    /* Toggle */
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 0;
+    }
+    .toggle-name {
+      font-family: var(--label);
+      font-size: 0.78rem; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--text);
+    }
+    .sw { position: relative; width: 38px; height: 20px; flex-shrink: 0; }
+    .sw input { opacity: 0; width: 0; height: 0; }
+    .sw-track {
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .sw-track::after {
+      content: '';
+      position: absolute;
+      left: 2px; top: 2px;
+      width: 14px; height: 14px;
+      background: var(--muted);
+      border-radius: 50%;
+      transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+    }
+    .sw input:checked + .sw-track { background: var(--cyan-dim); border-color: var(--border-hi); }
+    .sw input:checked + .sw-track::after {
+      transform: translateX(18px);
+      background: var(--cyan);
+      box-shadow: 0 0 7px rgba(0,255,204,0.8);
+    }
+
+    /* Tabs */
+    .tab-bar {
+      display: flex; gap: 4px;
+      background: rgba(0,0,0,0.45);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 4px;
+      margin-bottom: 15px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 7px;
+      background: transparent;
+      border: none; border-radius: 6px;
+      color: var(--muted);
+      font-family: var(--label);
+      font-size: 0.75rem; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: var(--cyan);
+      color: #000;
+      box-shadow: 0 0 14px rgba(0,255,204,0.4);
+    }
+
+    /* Separator */
+    .sep { height: 1px; background: var(--border); margin: 12px 0; }
+
+    /* Pair layout */
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* ══════════════════════════════════════════════════════════
+       DRAG & DROP ZONE
+    ══════════════════════════════════════════════════════════ */
+    .drop-zone {
+      position: relative;
+      border: 1.5px dashed rgba(0,255,204,0.22);
+      border-radius: 11px;
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      overflow: hidden;
+      background: rgba(0,255,204,0.02);
+      transition: all 0.3s;
+    }
+    .drop-zone:hover, .drop-zone.over {
+      border-color: var(--cyan);
+      background: var(--cyan-dim);
+      box-shadow: 0 0 30px rgba(0,255,204,0.12), inset 0 0 20px rgba(0,255,204,0.05);
+    }
+    .drop-zone.over { animation: dropPulse 1.2s ease-in-out infinite; }
+    @keyframes dropPulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(0,255,204,0.18); }
+      50%       { box-shadow: 0 0 45px rgba(0,255,204,0.5);  }
+    }
+    .drop-zone input[type="file"] {
+      position: absolute; inset: 0;
+      opacity: 0; cursor: pointer;
+      width: 100%; height: 100%;
+    }
+    .dz-icon { font-size: 2.2rem; display: block; margin-bottom: 7px; transition: transform 0.3s; }
+    .drop-zone:hover .dz-icon { transform: translateY(-5px); }
+    .dz-title {
+      font-family: var(--label);
+      font-size: 0.82rem; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text); margin-bottom: 4px;
+    }
+    .dz-sub {
+      font-family: var(--code);
+      font-size: 0.62rem;
+      color: var(--muted);
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       PROGRESS BAR
+    ══════════════════════════════════════════════════════════ */
+    .prog-wrap { display: none; margin-top: 13px; }
+    .prog-head { display: flex; justify-content: space-between; margin-bottom: 5px; }
+    .prog-lbl, .prog-pct {
+      font-family: var(--code);
+      font-size: 0.62rem;
+      color: var(--cyan);
+    }
+    .prog-pct { font-weight: 600; }
+    .prog-track {
+      width: 100%; height: 6px;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid rgba(0,255,204,0.12);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .prog-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(to right, #00cc99, var(--cyan), #80ffe8);
+      box-shadow: 0 0 10px var(--cyan);
+      border-radius: 3px;
+      transition: width 0.15s linear;
+      position: relative;
+    }
+    .prog-fill::after {
+      content: '';
+      position: absolute; top: 0; right: 0; bottom: 0;
+      width: 40px;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.5));
+      animation: shimmer 1.2s infinite;
+    }
+    @keyframes shimmer { 0%,100%{opacity:0} 50%{opacity:1} }
+    .prog-info {
+      font-family: var(--code);
+      font-size: 0.62rem;
+      color: var(--dim);
+      margin-top: 5px;
+      letter-spacing: 0.3px;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       BUTTONS
+    ══════════════════════════════════════════════════════════ */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      width: 100%;
+      padding: 10px 16px;
+      border: none; border-radius: 8px;
+      font-family: var(--label);
+      font-size: 0.8rem; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--cyan); color: #000;
+      box-shadow: 0 4px 22px rgba(0,255,204,0.28);
+    }
+    .btn-primary:hover {
+      background: #00e6b8;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,255,204,0.5);
+    }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-secondary {
+      background: rgba(255,255,255,0.04); color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      border-color: var(--border-hi);
+      background: rgba(0,255,204,0.06);
+      color: var(--cyan);
+      box-shadow: 0 0 14px rgba(0,255,204,0.1);
+    }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important; }
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+
+    /* ══════════════════════════════════════════════════════════
+       STATUS BAR
+    ══════════════════════════════════════════════════════════ */
+    .status {
+      display: none;
+      padding: 9px 12px;
+      border-radius: 7px;
+      font-family: var(--code);
+      font-size: 0.68rem;
+      line-height: 1.5;
+      margin-top: 10px;
+    }
+    .status.info    { color: var(--cyan);   border: 1px solid rgba(0,255,204,0.2);   background: rgba(0,255,204,0.05);   }
+    .status.success { color: var(--green);  border: 1px solid rgba(57,255,20,0.2);   background: rgba(57,255,20,0.05);   }
+    .status.error   { color: var(--red);    border: 1px solid rgba(255,60,60,0.2);   background: rgba(255,60,60,0.05);   }
+    .status.warning { color: var(--yellow); border: 1px solid rgba(255,214,10,0.22); background: rgba(255,214,10,0.05);  }
+
+    /* ══════════════════════════════════════════════════════════
+       OLED BEZEL / PREVIEW
+    ══════════════════════════════════════════════════════════ */
+    .oled-bezel {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: #000;
+      border-radius: 12px;
+      border: 2px solid #111117;
+      padding: 20px;
+      min-height: 200px;
+      position: relative;
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.02);
+    }
+    .oled-res-tag {
+      position: absolute; top: -10px; left: 14px;
+      font-family: var(--code);
+      font-size: 0.58rem;
+      background: #0c0c0f;
+      color: var(--cyan);
+      border: 1px solid rgba(0,255,204,0.2);
+      padding: 2px 9px;
+      border-radius: 4px;
+      letter-spacing: 1px;
+    }
+    .oled-chip-tag {
+      position: absolute; bottom: 7px; right: 12px;
+      font-family: var(--code);
+      font-size: 0.52rem;
+      color: #222228;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .canvas-shell {
+      position: relative;
+      display: inline-block;
+      filter: drop-shadow(0 0 6px rgba(0,255,204,0.25));
+    }
+    /* Phosphor scanlines overlay */
+    .canvas-shell::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent, transparent 1px,
+        rgba(0,0,0,0.18) 1px, rgba(0,0,0,0.18) 2px
+      );
+      pointer-events: none;
+    }
+    #oledCanvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      background: #000;
+    }
+
+    .preview-controls {
+      display: flex; align-items: center; gap: 10px;
+      margin-top: 14px;
+    }
+    .play-btn {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--cyan-dim);
+      border: 1px solid var(--border-hi);
+      color: var(--cyan);
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .play-btn:hover { background: var(--cyan); color: #000; box-shadow: 0 0 16px rgba(0,255,204,0.45); }
+    .frame-ctr {
+      font-family: var(--code);
+      font-size: 0.68rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .frame-ctr span { color: var(--cyan); }
+    .dith-badge {
+      margin-left: auto;
+      font-family: var(--code);
+      font-size: 0.62rem;
+      color: var(--muted);
+    }
+    .dith-badge span { color: var(--cyan); }
+
+    /* Memory bar */
+    .mem-row {
+      display: flex; align-items: center; gap: 8px;
+      font-family: var(--code);
+      font-size: 0.62rem;
+      color: var(--muted);
+      padding: 7px 10px;
+      background: rgba(0,0,0,0.35);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      margin-top: 10px;
+      display: none;
+    }
+    .mem-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+      flex-shrink: 0;
+    }
+    .mem-dot.warn { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+    .mem-dot.crit { background: var(--red); box-shadow: 0 0 6px var(--red); animation: blinkDot 1s infinite; }
+    @keyframes blinkDot { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    /* ══════════════════════════════════════════════════════════
+       FRAME TIMELINE
+    ══════════════════════════════════════════════════════════ */
+    .timeline-wrap {
+      overflow-x: auto;
+      padding: 8px 2px 10px;
+    }
+    .timeline-inner {
+      display: flex;
+      gap: 6px;
+      min-width: min-content;
+    }
+    .timeline-empty {
+      width: 100%;
+      padding: 22px 0;
+      text-align: center;
+      font-family: var(--code);
+      font-size: 0.68rem;
+      color: var(--dim);
+    }
+    .f-thumb {
+      position: relative;
+      flex-shrink: 0;
+      border-radius: 5px;
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .f-thumb:hover { border-color: var(--border-hi); transform: translateY(-3px); }
+    .f-thumb.active { border-color: var(--cyan); box-shadow: 0 0 12px rgba(0,255,204,0.3); }
+    .f-thumb canvas { display: block; image-rendering: pixelated; }
+    .f-num {
+      position: absolute; bottom: 2px; left: 3px;
+      font-family: var(--code);
+      font-size: 0.48rem;
+      color: rgba(0,255,204,0.7);
+      line-height: 1;
+      pointer-events: none;
+    }
+    .f-del {
+      position: absolute; top: 2px; right: 2px;
+      width: 16px; height: 16px;
+      background: rgba(255,60,60,0.88);
+      border: none; border-radius: 3px;
+      color: #fff;
+      font-size: 0.52rem;
+      cursor: pointer;
+      display: none;
+      align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .f-del:hover { background: var(--red); }
+    .f-thumb:hover .f-del { display: flex; }
+
+    /* ══════════════════════════════════════════════════════════
+       CODE OUTPUT PANEL
+    ══════════════════════════════════════════════════════════ */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+      margin-bottom: 11px;
+    }
+    .stat-chip {
+      text-align: center;
+      padding: 8px 4px;
+      background: rgba(0,0,0,0.45);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+    }
+    .stat-val {
+      display: block;
+      font-family: var(--code);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--cyan);
+      line-height: 1.2;
+    }
+    .stat-lbl {
+      font-family: var(--label);
+      font-size: 0.58rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .code-out {
+      width: 100%;
+      height: 320px;
+      background: rgba(0,0,0,0.75);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: #4ade80;
+      font-family: var(--code);
+      font-size: 0.7rem;
+      line-height: 1.65;
+      padding: 14px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .code-out:focus { border-color: var(--border-hi); }
+
+    /* ══════════════════════════════════════════════════════════
+       TOAST
+    ══════════════════════════════════════════════════════════ */
+    .toast {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      padding: 11px 18px;
+      background: rgba(9,9,12,0.96);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-hi);
+      border-radius: 10px;
+      font-family: var(--code);
+      font-size: 0.72rem;
+      color: var(--cyan);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 20px rgba(0,255,204,0.18);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 9999;
+      pointer-events: none;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    /* Glow border on active card hover */
+    .card-glow:hover {
+      box-shadow: 0 0 0 1px rgba(0,255,204,0.15), 0 8px 32px rgba(0,0,0,0.4);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ════════════════════ HEADER ════════════════════ -->
+  <header class="app-header">
+    <div class="app-title">
+      OLED <span class="accent">Animation</span> Studio
+      <span class="version-pill">v2.0 PRO</span>
+    </div>
+    <div class="app-sub">ESP32 · Arduino · SSD1306 · 1-Bit PROGMEM Generator</div>
+    <div class="header-rule"></div>
+  </header>
+
+  <!-- ════════════════════ MAIN GRID ════════════════════ -->
+  <main class="app-grid">
+
+    <!-- ╔══════════════════════╗
+         ║   LEFT PANEL         ║
+         ╚══════════════════════╝ -->
+    <div class="panel-left">
+
+      <!-- INPUT SOURCE -->
+      <div class="card card-glow">
+        <div class="sec-title">📥 Input Source</div>
+
+        <div class="tab-bar">
+          <button class="tab-btn active" id="tabVidBtn" onclick="switchTab('video')">MP4 / WebM</button>
+          <button class="tab-btn" id="tabImgBtn" onclick="switchTab('image')">Image Frames</button>
+        </div>
+
+        <!-- VIDEO TAB -->
+        <div id="videoTab">
+          <div class="drop-zone" id="videoZone">
+            <input type="file" id="uploadVideo" accept="video/*" />
+            <span class="dz-icon">🎬</span>
+            <div class="dz-title">Drop Video Here</div>
+            <div class="dz-sub">.mp4 &nbsp;·&nbsp; .webm &nbsp;·&nbsp; .mov &nbsp;·&nbsp; .avi</div>
+          </div>
+          <div class="ctrl" style="margin-top:12px;">
+            <label class="ctrl-label">Target Extraction FPS</label>
+            <input type="number" id="videoFps" value="10" min="1" max="30" />
+          </div>
+          <div class="prog-wrap" id="progWrap">
+            <div class="prog-head">
+              <span class="prog-lbl" id="progLbl">EXTRACTING FRAMES</span>
+              <span class="prog-pct" id="progPct">0%</span>
+            </div>
+            <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+            <div class="prog-info" id="progInfo">Initializing…</div>
+          </div>
+        </div>
+
+        <!-- IMAGE TAB -->
+        <div id="imageTab" style="display:none;">
+          <div class="drop-zone" id="imageZone">
+            <input type="file" id="uploadImages" accept="image/*" multiple />
+            <span class="dz-icon">🖼️</span>
+            <div class="dz-title">Drop Image Frames</div>
+            <div class="dz-sub">.png &nbsp;·&nbsp; .jpg &nbsp;·&nbsp; .gif &nbsp;·&nbsp; .bmp &nbsp;·&nbsp; multiple OK</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISUAL SETTINGS -->
+      <div class="card card-glow">
+        <div class="sec-title">⚙️ Visual Settings</div>
+
+        <div class="ctrl">
+          <label class="ctrl-label">OLED Hardware Resolution</label>
+          <select id="oledType">
+            <option value="128x64">128 × 64 — 0.96″ Standard</option>
+            <option value="128x32">128 × 32 — 0.91″ Narrow</option>
+            <option value="64x48">64 × 48 — 0.66″ Mini</option>
+          </select>
+        </div>
+
+        <div class="ctrl">
+          <label class="ctrl-label">Binarization Algorithm</label>
+          <select id="ditheringMode">
+            <option value="threshold">Standard Threshold</option>
+            <option value="floyd">Floyd-Steinberg Dithering</option>
+            <option value="bayer">Bayer Pattern (4×4) Dithering</option>
+          </select>
+        </div>
+
+        <div class="ctrl" id="thrGroup">
+          <label class="ctrl-label">Threshold &nbsp;<span class="live-val" id="thrVal">127</span></label>
+          <input type="range" id="threshold" min="0" max="255" value="127" />
+        </div>
+
+        <div class="ctrl">
+          <label class="ctrl-label">Scale <span class="live-val" id="scaleVal">100</span>%</label>
+          <input type="range" id="scale" min="10" max="250" value="100" />
+        </div>
+
+        <div class="pair">
+          <div class="ctrl">
+            <label class="ctrl-label">X Offset <span class="live-val" id="xOffVal">0</span></label>
+            <input type="range" id="xOffset" min="-128" max="128" value="0" />
+          </div>
+          <div class="ctrl">
+            <label class="ctrl-label">Y Offset <span class="live-val" id="yOffVal">0</span></label>
+            <input type="range" id="yOffset" min="-64" max="64" value="0" />
+          </div>
+        </div>
+
+        <div class="toggle-row">
+          <span class="toggle-name">Invert Colors</span>
+          <label class="sw">
+            <input type="checkbox" id="invert" />
+            <span class="sw-track"></span>
+          </label>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="ctrl">
+          <label class="ctrl-label">Preview Speed <span class="live-val" id="speedVal">80</span> ms</label>
+          <input type="range" id="speed" min="20" max="1000" value="80" />
+        </div>
+      </div>
+
+      <!-- GENERATE -->
+      <div class="card card-glow">
+        <div class="sec-title">⚡ Export</div>
+
+        <div class="ctrl">
+          <label class="ctrl-label">Output Format</label>
+          <select id="exportFmt">
+            <option value="adafruit">Adafruit GFX — PROGMEM Standard</option>
+            <option value="u8g2">U8g2 / XBM — Row-Major LSB</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary" id="generateBtn" style="margin-top:4px;">
+          ⚡ &nbsp;Generate C++ Code
+        </button>
+
+        <div class="status" id="statusBar"></div>
+      </div>
+    </div>
+
+    <!-- ╔══════════════════════╗
+         ║   CENTER PANEL       ║
+         ╚══════════════════════╝ -->
+    <div class="panel-center">
+
+      <!-- LIVE PREVIEW -->
+      <div class="card card-glow">
+        <div class="sec-title">📺 Live Preview</div>
+
+        <div class="oled-bezel">
+          <div class="oled-res-tag" id="resBadge">SSD1306 · 128×64</div>
+          <div class="canvas-shell">
+            <canvas id="oledCanvas" width="128" height="64"></canvas>
+          </div>
+          <div class="oled-chip-tag">SSD1306</div>
+        </div>
+
+        <div class="preview-controls">
+          <button class="play-btn" id="playBtn" title="Play / Pause">▶</button>
+          <div class="frame-ctr">
+            Frame <span id="fNum">0</span> / <span id="fTotal">0</span>
+          </div>
+          <div class="dith-badge">
+            Algorithm: <span id="dithBadge">Threshold</span>
+          </div>
+        </div>
+
+        <div class="mem-row" id="memRow">
+          <div class="mem-dot" id="memDot"></div>
+          <span id="memText">…</span>
+        </div>
+      </div>
+
+      <!-- FRAME TIMELINE -->
+      <div class="card card-glow" style="flex:1;">
+        <div class="sec-title" style="margin-bottom:6px;">
+          🎞️ Frame Timeline
+          <span style="font-family:var(--code);font-size:0.6rem;color:var(--muted);font-weight:400;margin-left:4px;" id="fCountLbl"></span>
+        </div>
+        <div class="timeline-wrap">
+          <div class="timeline-inner" id="timelineInner">
+            <div class="timeline-empty">No frames loaded. Upload a video or image sequence to begin.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ╔══════════════════════╗
+         ║   RIGHT PANEL        ║
+         ╚══════════════════════╝ -->
+    <div class="panel-right">
+      <div class="card card-glow" style="flex:1;display:flex;flex-direction:column;">
+        <div class="sec-title">💻 C++ PROGMEM Output</div>
+
+        <div class="stat-grid">
+          <div class="stat-chip">
+            <span class="stat-val" id="sFrames">0</span>
+            <span class="stat-lbl">Frames</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-val" id="sBytes">0 B</span>
+            <span class="stat-lbl">Flash Est.</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-val" id="sFps">—</span>
+            <span class="stat-lbl">Anim FPS</span>
+          </div>
+        </div>
+
+        <textarea id="codeOut" class="code-out" readonly
+          placeholder="// ════════════════════════════════════
+// OLED Animation Studio — Pro v2.0
+// ════════════════════════════════════
+//
+// Step 1 ▸ Upload video or image frames
+// Step 2 ▸ Tune Visual Settings
+// Step 3 ▸ Choose export format
+// Step 4 ▸ Click ⚡ GENERATE C++ CODE
+// Step 5 ▸ Copy or Download .h file
+//
+// Supports:
+//   • Adafruit GFX (SSD1306 page format)
+//   • U8g2 / XBM (row-major, LSB-first)
+//   • Floyd-Steinberg &amp; Bayer dithering
+"></textarea>
+
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="copyCode()">📋 Copy Code</button>
+          <button class="btn btn-primary"   onclick="downloadH()">💾 Download .h</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ════════════════════════════════════════════════════════
+       JAVASCRIPT ENGINE
+  ════════════════════════════════════════════════════════ -->
+  <script>
+  // ════════════════════════════════════════════════════════
+  //  STATE
+  // ════════════════════════════════════════════════════════
+  let framesData    = [];       // [{img: HTMLImageElement}, …]
+  let currentIdx    = 0;
+  let isPlaying     = true;
+  let rafId         = null;
+  let lastTick      = 0;
+  let canvasW       = 128;
+  let canvasH       = 64;
+  let generatedCode = '';
+
+  // ════════════════════════════════════════════════════════
+  //  ELEMENT REFS
+  // ════════════════════════════════════════════════════════
+  const oledCanvas     = document.getElementById('oledCanvas');
+  const ctx            = oledCanvas.getContext('2d', { willReadFrequently: true });
+  const uploadVideo    = document.getElementById('uploadVideo');
+  const uploadImages   = document.getElementById('uploadImages');
+  const videoFpsIn     = document.getElementById('videoFps');
+  const oledTypeEl     = document.getElementById('oledType');
+  const ditheringEl    = document.getElementById('ditheringMode');
+  const exportFmtEl    = document.getElementById('exportFmt');
+  const thresholdEl    = document.getElementById('threshold');
+  const scaleEl        = document.getElementById('scale');
+  const xOffEl         = document.getElementById('xOffset');
+  const yOffEl         = document.getElementById('yOffset');
+  const invertEl       = document.getElementById('invert');
+  const speedEl        = document.getElementById('speed');
+  const generateBtn    = document.getElementById('generateBtn');
+  const codeOut        = document.getElementById('codeOut');
+  const playBtn        = document.getElementById('playBtn');
+  const timelineInner  = document.getElementById('timelineInner');
+  const statusBar      = document.getElementById('statusBar');
+  const memRow         = document.getElementById('memRow');
+  const memDot         = document.getElementById('memDot');
+  const memText        = document.getElementById('memText');
+
+  // ════════════════════════════════════════════════════════
+  //  BAYER MATRIX (4×4)
+  // ════════════════════════════════════════════════════════
+  const BAYER = [
+    [ 0,  8,  2, 10],
+    [12,  4, 14,  6],
+    [ 3, 11,  1,  9],
+    [15,  7, 13,  5]
+  ];
+
+  // ════════════════════════════════════════════════════════
+  //  TAB SWITCHING
+  // ════════════════════════════════════════════════════════
+  function switchTab(tab) {
+    document.getElementById('videoTab').style.display  = tab === 'video' ? 'block' : 'none';
+    document.getElementById('imageTab').style.display  = tab === 'image' ? 'block' : 'none';
+    document.getElementById('tabVidBtn').classList.toggle('active', tab === 'video');
+    document.getElementById('tabImgBtn').classList.toggle('active', tab === 'image');
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  DRAG & DROP SETUP
+  // ════════════════════════════════════════════════════════
+  function wireDropZone(zoneId, inputEl) {
+    const zone = document.getElementById(zoneId);
+    zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('over'); });
+    zone.addEventListener('dragleave', ()  => zone.classList.remove('over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('over');
+      try {
+        const dt = new DataTransfer();
+        Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+        inputEl.files = dt.files;
+        inputEl.dispatchEvent(new Event('change'));
+      } catch (_) {
+        showToast('⚠️ Drop failed — use file picker instead.');
+      }
+    });
+  }
+  wireDropZone('videoZone', uploadVideo);
+  wireDropZone('imageZone', uploadImages);
+
+  // ════════════════════════════════════════════════════════
+  //  OLED TYPE CHANGE
+  // ════════════════════════════════════════════════════════
+  oledTypeEl.addEventListener('change', () => {
+    const [w, h] = oledTypeEl.value.split('x').map(Number);
+    canvasW = w; canvasH = h;
+    oledCanvas.width  = w;
+    oledCanvas.height = h;
+    syncCanvasDisplaySize();
+    document.getElementById('resBadge').textContent = `SSD1306 · ${w}×${h}`;
+    xOffEl.min = -w; xOffEl.max = w;
+    yOffEl.min = -h; yOffEl.max = h;
+    if (framesData.length) { renderCurrentFrame(); rebuildTimeline(); }
+  });
+
+  function syncCanvasDisplaySize() {
+    const SCALE = 3;
+    oledCanvas.style.width  = (canvasW * SCALE) + 'px';
+    oledCanvas.style.height = (canvasH * SCALE) + 'px';
+  }
+  syncCanvasDisplaySize();
+
+  // ════════════════════════════════════════════════════════
+  //  DITHERING SELECT → show/hide threshold slider
+  // ════════════════════════════════════════════════════════
+  ditheringEl.addEventListener('change', () => {
+    const m = ditheringEl.value;
+    document.getElementById('thrGroup').style.display = m === 'threshold' ? 'block' : 'none';
+    const labels = { threshold: 'Threshold', floyd: 'Floyd-Steinberg', bayer: 'Bayer 4×4' };
+    document.getElementById('dithBadge').textContent = labels[m];
+    if (framesData.length) renderCurrentFrame();
+  });
+
+  // ════════════════════════════════════════════════════════
+  //  SLIDERS — live labels & fill
+  // ════════════════════════════════════════════════════════
+  function fillSlider(el) {
+    const min = +el.min, max = +el.max, val = +el.value;
+    const pct = ((val - min) / (max - min)) * 100;
+    el.style.background = `linear-gradient(to right, var(--cyan) ${pct}%, rgba(255,255,255,0.08) ${pct}%)`;
+  }
+
+  function bindSlider(el, labelId, suffix, live) {
+    el.addEventListener('input', () => {
+      const lv = document.getElementById(labelId);
+      if (lv) lv.textContent = el.value + (suffix || '');
+      fillSlider(el);
+      if (live && framesData.length) renderCurrentFrame();
+    });
+    fillSlider(el);
+  }
+
+  bindSlider(thresholdEl, 'thrVal',   '',  true);
+  bindSlider(scaleEl,     'scaleVal', '',  true);
+  bindSlider(speedEl,     'speedVal', '',  false);
+  speedEl.addEventListener('input', updateCodeStats);
+
+  // X/Y offsets share a handler
+  [xOffEl, yOffEl].forEach(el => {
+    el.addEventListener('input', () => {
+      document.getElementById('xOffVal').textContent = xOffEl.value;
+      document.getElementById('yOffVal').textContent = yOffEl.value;
+      fillSlider(el);
+      if (framesData.length) renderCurrentFrame();
+    });
+    fillSlider(el);
+  });
+
+  invertEl.addEventListener('change', () => { if (framesData.length) renderCurrentFrame(); });
+
+  // ════════════════════════════════════════════════════════
+  //  BINARIZATION ENGINE
+  // ════════════════════════════════════════════════════════
+  function binarize(imageData) {
+    const { data, width, height } = imageData;
+    const mode  = ditheringEl.value;
+    const thr   = parseInt(thresholdEl.value);
+    const inv   = invertEl.checked;
+    const total = width * height;
+
+    // Luminance extraction
+    const gray = new Float32Array(total);
+    for (let i = 0; i < total; i++) {
+      gray[i] = data[i*4] * 0.299 + data[i*4+1] * 0.587 + data[i*4+2] * 0.114;
+    }
+
+    const bin = new Uint8Array(total);
+
+    if (mode === 'threshold') {
+      for (let i = 0; i < total; i++) bin[i] = gray[i] > thr ? 255 : 0;
+
+    } else if (mode === 'floyd') {
+      const buf = new Float32Array(gray);
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const i   = y * width + x;
+          const old = Math.max(0, Math.min(255, buf[i]));
+          const nw  = old > 127 ? 255 : 0;
+          bin[i]    = nw;
+          const err = old - nw;
+          if (x+1 < width)           buf[i+1]        += err * 7/16;
+          if (y+1 < height) {
+            if (x-1 >= 0)            buf[i+width-1]  += err * 3/16;
+                                     buf[i+width]    += err * 5/16;
+            if (x+1 < width)         buf[i+width+1]  += err * 1/16;
+          }
+        }
+      }
+    } else if (mode === 'bayer') {
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const t = (BAYER[y & 3][x & 3] / 16) * 255;
+          bin[y * width + x] = gray[y * width + x] > t ? 255 : 0;
+        }
+      }
+    }
+
+    // Write back with optional invert
+    for (let i = 0; i < total; i++) {
+      const v = inv ? 255 - bin[i] : bin[i];
+      data[i*4] = v; data[i*4+1] = v; data[i*4+2] = v; data[i*4+3] = 255;
+    }
+    return imageData;
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  DRAW FRAME TO CANVAS CONTEXT
+  // ════════════════════════════════════════════════════════
+  function drawFrameRaw(dstCtx, img, w, h) {
+    dstCtx.fillStyle = '#000';
+    dstCtx.fillRect(0, 0, w, h);
+    const sc   = parseFloat(scaleEl.value) / 100;
+    const xOff = parseInt(xOffEl.value);
+    const yOff = parseInt(yOffEl.value);
+    const base = Math.min(w / img.width, h / img.height);
+    const fs   = base * sc;
+    const dw   = img.width  * fs;
+    const dh   = img.height * fs;
+    const dx   = (w - dw) / 2 + xOff;
+    const dy   = (h - dh) / 2 + yOff;
+    dstCtx.drawImage(img, dx, dy, dw, dh);
+  }
+
+  function renderCurrentFrame() {
+    if (!framesData.length) return;
+    const fr = framesData[currentIdx];
+    drawFrameRaw(ctx, fr.img, canvasW, canvasH);
+    const id = ctx.getImageData(0, 0, canvasW, canvasH);
+    binarize(id);
+    ctx.putImageData(id, 0, 0);
+    document.getElementById('fNum').textContent   = currentIdx + 1;
+    document.getElementById('fTotal').textContent = framesData.length;
+    // Highlight active thumb
+    document.querySelectorAll('.f-thumb').forEach((el, i) =>
+      el.classList.toggle('active', i === currentIdx)
+    );
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  RAF ANIMATION LOOP
+  // ════════════════════════════════════════════════════════
+  function startRAF() {
+    if (rafId) cancelAnimationFrame(rafId);
+    lastTick = 0;
+    rafId = requestAnimationFrame(rafLoop);
+  }
+  function rafLoop(ts) {
+    if (isPlaying && framesData.length) {
+      const ms = parseInt(speedEl.value) || 80;
+      if (ts - lastTick >= ms) {
+        lastTick = ts;
+        renderCurrentFrame();
+        currentIdx = (currentIdx + 1) % framesData.length;
+      }
+    }
+    rafId = requestAnimationFrame(rafLoop);
+  }
+  startRAF();
+
+  playBtn.addEventListener('click', () => {
+    isPlaying = !isPlaying;
+    playBtn.textContent = isPlaying ? '⏸' : '▶';
+  });
+
+  // ════════════════════════════════════════════════════════
+  //  TIMELINE / FRAME GALLERY
+  // ════════════════════════════════════════════════════════
+  function buildThumb(frame, index) {
+    const tw = Math.min(canvasW, 72);
+    const th = Math.round(tw * (canvasH / canvasW));
+
+    const wrap = document.createElement('div');
+    wrap.className = 'f-thumb';
+    wrap.dataset.i = index;
+
+    const c = document.createElement('canvas');
+    c.width  = tw; c.height = th;
+    c.style.width  = tw + 'px';
+    c.style.height = th + 'px';
+
+    // Render thumbnail (fast threshold only for performance)
+    const tc = c.getContext('2d', { willReadFrequently: true });
+    tc.fillStyle = '#000';
+    tc.fillRect(0, 0, tw, th);
+    const sc   = parseFloat(scaleEl.value) / 100;
+    const base = Math.min(tw / frame.img.width, th / frame.img.height);
+    const fs   = base * sc;
+    const dw   = frame.img.width * fs, dh = frame.img.height * fs;
+    const dx   = (tw - dw) / 2, dy = (th - dh) / 2;
+    tc.drawImage(frame.img, dx, dy, dw, dh);
+    // Simple grayscale threshold for thumbnails
+    const id = tc.getImageData(0, 0, tw, th);
+    const d  = id.data;
+    const thr = parseInt(thresholdEl.value);
+    for (let i = 0; i < d.length; i += 4) {
+      const g = d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114;
+      const v = g > thr ? 255 : 0;
+      d[i] = v; d[i+1] = v; d[i+2] = v;
+    }
+    tc.putImageData(id, 0, 0);
+
+    const num = document.createElement('div');
+    num.className = 'f-num';
+    num.textContent = index + 1;
+
+    const del = document.createElement('button');
+    del.className = 'f-del';
+    del.title = 'Delete frame';
+    del.textContent = '✕';
+    del.addEventListener('click', e => { e.stopPropagation(); deleteFrame(index); });
+
+    wrap.append(c, num, del);
+    wrap.addEventListener('click', () => {
+      currentIdx = index;
+      isPlaying  = false;
+      playBtn.textContent = '▶';
+      renderCurrentFrame();
+    });
+    return wrap;
+  }
+
+  function rebuildTimeline() {
+    timelineInner.innerHTML = '';
+    if (!framesData.length) {
+      timelineInner.innerHTML = '<div class="timeline-empty">No frames loaded.</div>';
+      document.getElementById('fCountLbl').textContent = '';
+      return;
+    }
+    document.getElementById('fCountLbl').textContent = `(${framesData.length} frames)`;
+    framesData.forEach((f, i) => timelineInner.appendChild(buildThumb(f, i)));
+    updateMemRow();
+    updateCodeStats();
+  }
+
+  function deleteFrame(index) {
+    framesData.splice(index, 1);
+    if (currentIdx >= framesData.length) currentIdx = Math.max(0, framesData.length - 1);
+    rebuildTimeline();
+    if (framesData.length) renderCurrentFrame();
+    else ctx.clearRect(0, 0, canvasW, canvasH);
+    showToast(`🗑️  Frame ${index + 1} deleted — ${framesData.length} remaining`);
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  MEMORY INDICATOR
+  // ════════════════════════════════════════════════════════
+  function updateMemRow() {
+    if (!framesData.length) { memRow.style.display = 'none'; return; }
+    memRow.style.display = 'flex';
+    const bytesPerFr = Math.ceil((canvasW * canvasH) / 8);
+    const total      = bytesPerFr * framesData.length;
+    const kb         = (total / 1024).toFixed(1);
+    const pct        = (total / (4 * 1024 * 1024) * 100).toFixed(1);
+    memDot.className = total > 512*1024 ? 'mem-dot crit'
+                     : total > 200*1024 ? 'mem-dot warn'
+                     :                    'mem-dot';
+    memText.textContent =
+      `Flash usage: ~${kb} KB  (${pct}% of 4 MB)  ·  ` +
+      `${framesData.length} frames × ${canvasW}×${canvasH}`;
+  }
+
+  function updateCodeStats() {
+    const bytesPerFr = Math.ceil((canvasW * canvasH) / 8);
+    const total      = bytesPerFr * framesData.length;
+    document.getElementById('sFrames').textContent = framesData.length;
+    document.getElementById('sBytes').textContent  = fmtBytes(total);
+    document.getElementById('sFps').textContent    =
+      framesData.length ? Math.round(1000 / parseInt(speedEl.value)) + '' : '—';
+  }
+
+  function fmtBytes(b) {
+    if (b < 1024)       return b + ' B';
+    if (b < 1024*1024)  return (b/1024).toFixed(1) + ' KB';
+    return (b/1024/1024).toFixed(2) + ' MB';
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  IMAGE UPLOAD
+  // ════════════════════════════════════════════════════════
+  uploadImages.addEventListener('change', async e => {
+    const files = Array.from(e.target.files)
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    if (!files.length) return;
+    framesData = [];
+    setStatus('info', `⏳  Loading ${files.length} image(s)…`);
+
+    const loaded = await Promise.all(files.map(f => new Promise(res => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => res({ img });
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(f);
+    })));
+
+    framesData = loaded;
+    afterLoad();
+
+    if (framesData.length > 300) {
+      setStatus('warning', `⚠️  ${framesData.length} frames loaded — high flash usage. Consider trimming.`);
+    } else {
+      setStatus('success', `✅  ${framesData.length} frames loaded from image sequence.`);
+    }
+  });
+
+  // ════════════════════════════════════════════════════════
+  //  VIDEO EXTRACTION — ASYNC NON-BLOCKING
+  // ════════════════════════════════════════════════════════
+  uploadVideo.addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    framesData = [];
+    setStatus('info', '🎥  Analyzing video file…');
+    document.getElementById('progWrap').style.display = 'block';
+    setProgress(0, 'Initializing…');
+
+    const targetFps = Math.max(1, Math.min(30, parseInt(videoFpsIn.value) || 10));
+    const step      = 1 / targetFps;
+
+    // Create hidden video element
+    const video = document.createElement('video');
+    video.muted = true; video.playsInline = true; video.preload = 'metadata';
+    video.style.cssText = 'position:absolute;top:-9999px;width:1px;height:1px;';
+    document.body.appendChild(video);
+    video.src = URL.createObjectURL(file);
+
+    await new Promise(res => { video.onloadedmetadata = res; });
+
+    const dur   = video.duration;
+    const estFr = Math.floor(dur * targetFps);
+    const CAP   = 300;
+
+    // Pre-flight warnings
+    if (estFr > CAP) {
+      setStatus('warning',
+        `⚠️  Video would produce ~${estFr} frames. Capped at ${CAP}. ` +
+        `Lower FPS or trim your video.`);
+    } else if (dur > 60) {
+      setStatus('warning', `⚠️  Video is ${dur.toFixed(1)}s long — this may use significant flash.`);
+    }
+
+    const tmpCanvas = document.createElement('canvas');
+    const tmpCtx    = tmpCanvas.getContext('2d');
+    const t0        = performance.now();
+    let   curTime   = 0;
+
+    while (curTime <= dur && framesData.length < CAP) {
+      video.currentTime = curTime;
+
+      await new Promise(res => {
+        let done = false;
+        const finish = () => { if (!done) { done = true; video.removeEventListener('seeked', finish); res(); } };
+        video.addEventListener('seeked', finish);
+        setTimeout(finish, 700); // Anti-stuck safety
+      });
+
+      tmpCanvas.width  = video.videoWidth  || 640;
+      tmpCanvas.height = video.videoHeight || 480;
+      tmpCtx.drawImage(video, 0, 0);
+
+      const img = new Image();
+      img.src = tmpCanvas.toDataURL('image/jpeg', 0.85);
+      await new Promise(res => { img.onload = res; });
+      framesData.push({ img });
+
+      curTime += step;
+      const pct     = Math.min(100, Math.floor((curTime / dur) * 100));
+      const elapsed = (performance.now() - t0) / 1000;
+      const rate    = framesData.length / Math.max(elapsed, 0.01);
+      const remFr   = Math.max(0, Math.min(estFr, CAP) - framesData.length);
+      const remSec  = (remFr / Math.max(rate, 0.1)).toFixed(0);
+      setProgress(pct,
+        `Frame ${framesData.length} / ${Math.min(estFr, CAP)}  ·  ~${remSec}s remaining`
+      );
+    }
+
+    setProgress(100, `Done! ${framesData.length} frames extracted.`);
+    URL.revokeObjectURL(video.src);
+    document.body.removeChild(video);
+
+    speedEl.value = Math.floor(1000 / targetFps);
+    fillSlider(speedEl);
+    document.getElementById('speedVal').textContent = speedEl.value;
+
+    afterLoad();
+
+    const status = framesData.length >= CAP
+      ? `⚠️  Capped at ${CAP} frames (${dur.toFixed(1)}s @ ${targetFps} FPS).`
+      : `✅  ${framesData.length} frames extracted from ${dur.toFixed(1)}s video.`;
+    setStatus(framesData.length >= CAP ? 'warning' : 'success', status);
+
+    setTimeout(() => { document.getElementById('progWrap').style.display = 'none'; }, 2200);
+  });
+
+  function afterLoad() {
+    currentIdx = 0;
+    isPlaying  = true;
+    playBtn.textContent = '⏸';
+    rebuildTimeline();
+    renderCurrentFrame();
+  }
+
+  function setProgress(pct, info) {
+    document.getElementById('progFill').style.width = pct + '%';
+    document.getElementById('progPct').textContent  = pct + '%';
+    document.getElementById('progInfo').textContent = info;
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  CODE GENERATION — SHARED RENDER HELPER
+  // ════════════════════════════════════════════════════════
+  function renderFrameToPixels(frame) {
+    const off = document.createElement('canvas');
+    off.width = canvasW; off.height = canvasH;
+    const oc  = off.getContext('2d', { willReadFrequently: true });
+    drawFrameRaw(oc, frame.img, canvasW, canvasH);
+    const id  = oc.getImageData(0, 0, canvasW, canvasH);
+    binarize(id);
+    return id.data; // RGBA Uint8ClampedArray, all channels equal (0 or 255)
+  }
+
+  // ---- Adafruit GFX / SSD1306 (page-column format) ----
+  function genAdafruit() {
+    const pages      = Math.ceil(canvasH / 8);
+    const bytesPerFr = pages * canvasW;
+    const dithName   = { threshold:'Standard Threshold', floyd:'Floyd-Steinberg', bayer:'Bayer 4×4' }[ditheringEl.value];
+
+    let c = header('Adafruit GFX / SSD1306 PROGMEM', dithName, bytesPerFr);
+    c += `#pragma once\n#include <pgmspace.h>\n\n`;
+    c += `#define FRAME_COUNT   ${framesData.length}\n`;
+    c += `#define FRAME_WIDTH   ${canvasW}\n`;
+    c += `#define FRAME_HEIGHT  ${canvasH}\n`;
+    c += `#define FRAME_BYTES   ${bytesPerFr}\n\n`;
+
+    const names = [];
+    framesData.forEach((fr, idx) => {
+      const px   = renderFrameToPixels(fr);
+      const name = `frame_${pad3(idx)}`;
+      names.push(name);
+      c += `// ─── Frame ${idx + 1} / ${framesData.length}\n`;
+      c += `const unsigned char ${name}[${bytesPerFr}] PROGMEM = {\n`;
+      const bytes = [];
+      for (let page = 0; page < pages; page++) {
+        for (let x = 0; x < canvasW; x++) {
+          let byte = 0;
+          for (let bit = 0; bit < 8; bit++) {
+            const y = page * 8 + bit;
+            if (y < canvasH) {
+              const pos = (y * canvasW + x) * 4;
+              if (px[pos] > 127) byte |= (1 << bit);
+            }
+          }
+          bytes.push(hex(byte));
+        }
+      }
+      c += chunkJoin(bytes, 16);
+      c += '};\n\n';
+    });
+
+    c += pointerArray(names, 'PROGMEM');
+    c += `\n// ── Usage (Adafruit GFX) ──────────────────────\n`;
+    c += `// display.clearDisplay();\n`;
+    c += `// const uint8_t* fr = (const uint8_t*)pgm_read_ptr(&ANIMATION[frameIdx]);\n`;
+    c += `// display.drawBitmap(0, 0, fr, FRAME_WIDTH, FRAME_HEIGHT, WHITE);\n`;
+    c += `// display.display();\n`;
+    return c;
+  }
+
+  // ---- U8g2 / XBM (row-major, LSB-first) ----
+  function genU8g2() {
+    const bytesPerRow = Math.ceil(canvasW / 8);
+    const bytesPerFr  = bytesPerRow * canvasH;
+    const dithName    = { threshold:'Standard Threshold', floyd:'Floyd-Steinberg', bayer:'Bayer 4×4' }[ditheringEl.value];
+
+    let c = header('U8g2 / XBM (row-major, LSB-first)', dithName, bytesPerFr);
+    c += `#pragma once\n#include <pgmspace.h>\n\n`;
+    c += `#define FRAME_COUNT   ${framesData.length}\n`;
+    c += `#define FRAME_WIDTH   ${canvasW}\n`;
+    c += `#define FRAME_HEIGHT  ${canvasH}\n`;
+    c += `#define FRAME_BYTES   ${bytesPerFr}\n\n`;
+
+    const names = [];
+    framesData.forEach((fr, idx) => {
+      const px   = renderFrameToPixels(fr);
+      const name = `frame_xbm_${pad3(idx)}`;
+      names.push(name);
+      c += `// ─── Frame ${idx + 1} / ${framesData.length}\n`;
+      c += `const unsigned char ${name}[${bytesPerFr}] PROGMEM = {\n`;
+      const bytes = [];
+      for (let y = 0; y < canvasH; y++) {
+        for (let bx = 0; bx < bytesPerRow; bx++) {
+          let byte = 0;
+          for (let bit = 0; bit < 8; bit++) {
+            const x = bx * 8 + bit;
+            if (x < canvasW) {
+              const pos = (y * canvasW + x) * 4;
+              if (px[pos] > 127) byte |= (1 << bit); // LSB = leftmost pixel
+            }
+          }
+          bytes.push(hex(byte));
+        }
+      }
+      c += chunkJoin(bytes, 16);
+      c += '};\n\n';
+    });
+
+    c += pointerArray(names, 'PROGMEM');
+    c += `\n// ── Usage (U8g2) ──────────────────────────────\n`;
+    c += `// u8g2.clearBuffer();\n`;
+    c += `// const uint8_t* fr = (const uint8_t*)pgm_read_ptr(&ANIMATION[frameIdx]);\n`;
+    c += `// u8g2.drawXBMP(0, 0, FRAME_WIDTH, FRAME_HEIGHT, fr);\n`;
+    c += `// u8g2.sendBuffer();\n`;
+    return c;
+  }
+
+  // ── Code gen helpers ──
+  function header(fmt, dith, bpf) {
+    const kb = ((bpf * framesData.length) / 1024).toFixed(1);
+    return (
+      `// ════════════════════════════════════════════════════════\n` +
+      `// OLED Animation Studio — Generated by Pro v2.0\n` +
+      `// ════════════════════════════════════════════════════════\n` +
+      `// Format     : ${fmt}\n` +
+      `// Resolution : ${canvasW}x${canvasH} px\n` +
+      `// Frames     : ${framesData.length}\n` +
+      `// Dithering  : ${dith}\n` +
+      `// Bytes/Frame: ${bpf}\n` +
+      `// Total PROGMEM: ~${kb} KB\n` +
+      `// ════════════════════════════════════════════════════════\n\n`
+    );
+  }
+  function hex(b)    { return '0x' + b.toString(16).padStart(2,'0').toUpperCase(); }
+  function pad3(n)   { return String(n).padStart(3,'0'); }
+  function chunkJoin(arr, n) {
+    let s = '';
+    for (let i = 0; i < arr.length; i += n) {
+      s += '  ' + arr.slice(i, i+n).join(', ');
+      if (i+n < arr.length) s += ',';
+      s += '\n';
+    }
+    return s;
+  }
+  function pointerArray(names, pgm) {
+    let s = `// ── Frame pointer array ──────────────────────────\n`;
+    s    += `const unsigned char* const ANIMATION[FRAME_COUNT] ${pgm} = {\n`;
+    for (let i = 0; i < names.length; i += 4) {
+      s += '  ' + names.slice(i, i+4).join(', ');
+      if (i+4 < names.length) s += ',';
+      s += '\n';
+    }
+    s += `};\n`;
+    return s;
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  GENERATE BUTTON
+  // ════════════════════════════════════════════════════════
+  generateBtn.addEventListener('click', () => {
+    if (!framesData.length) {
+      setStatus('error', '❌  No frames loaded. Upload a video or image sequence first.');
+      return;
+    }
+    generateBtn.disabled = true;
+    setStatus('info', `⏳  Generating ${framesData.length} frames — please wait…`);
+
+    // Yield to browser to update UI, then run heavy computation
+    setTimeout(() => {
+      try {
+        const fmt = exportFmtEl.value;
+        generatedCode = fmt === 'adafruit' ? genAdafruit() : genU8g2();
+        codeOut.value = generatedCode;
+        updateCodeStats();
+        setStatus('success',
+          `✅  ${framesData.length} frames · ${fmtBytes(generatedCode.length)} · ` +
+          `${(exportFmtEl.options[exportFmtEl.selectedIndex].text.split('—')[0]).trim()}`
+        );
+        showToast('✅  C++ code generated!');
+      } catch (err) {
+        setStatus('error', '❌  Generation failed: ' + err.message);
+        console.error(err);
+      }
+      generateBtn.disabled = false;
+    }, 30);
+  });
+
+  // ════════════════════════════════════════════════════════
+  //  COPY & DOWNLOAD
+  // ════════════════════════════════════════════════════════
+  function copyCode() {
+    if (!generatedCode) { showToast('⚠️  Generate code first!'); return; }
+    navigator.clipboard.writeText(generatedCode)
+      .then(() => showToast('📋  Code copied to clipboard!'))
+      .catch(() => {
+        codeOut.select();
+        document.execCommand('copy');
+        showToast('📋  Copied!');
+      });
+  }
+
+  function downloadH() {
+    if (!generatedCode) { showToast('⚠️  Generate code first!'); return; }
+    const name = `animation_${canvasW}x${canvasH}_${framesData.length}f.h`;
+    const blob = new Blob([generatedCode], { type: 'text/plain' });
+    const url  = URL.createObjectURL(blob);
+    const a    = Object.assign(document.createElement('a'), { href: url, download: name });
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`💾  ${name} downloaded!`);
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  UI HELPERS
+  // ════════════════════════════════════════════════════════
+  function setStatus(type, msg) {
+    statusBar.className = 'status ' + type;
+    statusBar.textContent = msg;
+    statusBar.style.display = 'block';
+  }
+
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  INIT — fill all sliders on load
+  // ════════════════════════════════════════════════════════
+  [thresholdEl, scaleEl, speedEl, xOffEl, yOffEl].forEach(fillSlider);
+  updateCodeStats();
+  </script>
+
+</body>
+</html>
